@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Влияние ЛГБТ и исламизации на экономику и демографию</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600&amp;display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600&display=swap');
         
         :root {
             --bg: #1E1E1E;
             --surface: #252526;
             --text: #D4D4D4;
-            --accent: #007ACC;
-            --accent-hover: #0098FF;
+            --accent: #bf0a0a;
+            --accent-hover: #bf0a0a;
             --border: #3C3C3C;
         }
         
@@ -27,26 +27,54 @@
             background-color: var(--bg);
             color: var(--text);
             line-height: 1.6;
-            padding: 0;
-            margin: 0;
         }
         
         .header {
             background-color: #1F1F1F;
             border-bottom: 1px solid var(--border);
-            padding: 20px 40px;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
+            height: 60px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #D4D4D4;
+            font-size: 26px;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            display: none; /* Скрыто на ПК */
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .toggle-btn:hover {
+            background: #2D2D2D;
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
             color: #FFFFFF;
+        }
+        
+        .header-right {
+            color: #888;
+            font-size: 14px;
         }
         
         .container {
@@ -60,6 +88,38 @@
             border-right: 1px solid var(--border);
             padding: 24px 16px;
             overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 40px 40px 100px;
+            max-width: 1000px;
+        }
+        
+        /* Мобильная версия */
+        @media (max-width: 768px) {
+            .toggle-btn {
+                display: flex;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                height: calc(100vh - 60px);
+                transform: translateX(-100%);
+                z-index: 900;
+                box-shadow: 4px 0 12px rgba(0,0,0,0.5);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                padding: 24px 20px 100px;
+            }
         }
         
         .nav-link {
@@ -80,16 +140,6 @@
         .nav-link.active {
             background-color: #094771;
             color: #FFFFFF;
-        }
-        
-        .main-content {
-            flex: 1;
-            padding: 40px;
-            max-width: 1000px;
-        }
-        
-        .section {
-            margin-bottom: 48px;
         }
         
         h1, h2, h3 {
@@ -148,63 +198,47 @@
         .footer {
             background-color: #1F1F1F;
             border-top: 1px solid var(--border);
-            padding: 24px 40px;
+            padding: 20px;
             font-size: 14px;
             color: #888888;
             text-align: center;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background-color: var(--surface);
-        }
-        
-        th, td {
-            padding: 12px;
-            border: 1px solid var(--border);
-            text-align: left;
-        }
-        
-        th {
-            background-color: #2D2D2D;
-        }
-        
-        .highlight {
-            background-color: #264F78;
-            padding: 2px 6px;
-            border-radius: 3px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>sapph1ren</h1>
-        <div style="color: #888; font-size: 14px;">Демография • Экономика • Факты</div>
+        <div class="header-left">
+            <button class="toggle-btn" id="toggleSidebar" aria-label="Открыть оглавление">☰</button>
+            <h1>sapph1ren</h1>
+        </div>
+        <div class="header-right">Демография • Экономика • Факты</div>
     </div>
     
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div style="padding: 0 16px 16px; color: #999; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Содержание</div>
             <a href="#intro" class="nav-link active">Введение</a>
             <a href="#demography" class="nav-link">1. Демографический контекст</a>
             <a href="#economy" class="nav-link">2. Экономические последствия</a>
             <a href="#sources" class="nav-link">3. Ключевые факты и источники</a>
             <a href="#conclusions" class="nav-link">Выводы и оговорки</a>
-      
         </div>
         
         <!-- Main Content -->
-        <div class="main-content">
+        <div class="main-content" id="mainContent">
             <h1 id="intro">Влияние ЛГБТ* и исламизации на демографию и экономику</h1>
             
             <p>Это обзор на основе доступных демографических и экономических данных (Pew Research, научные статьи, OECD и др.). Корреляции не всегда равны причинности; многие факторы (урбанизация, образование, экономика) влияют одновременно.</p>
             
             <div class="card">
                 <h2 id="demography">1. Демографический контекст</h2>
-                
+                <!-- (Весь контент первого раздела без изменений) -->
                 <h3>Общий тренд в развитых странах</h3>
                 <p>Тотальная фертильность (TFR) ниже уровня воспроизводства (2,1 ребёнка на женщину). В Европе — около 1,5–1,6 у не-мусульман. Это приводит к старению населения, сокращению рабочей силы и росту демографической нагрузки (dependency ratio).</p>
                 
@@ -229,7 +263,7 @@
             
             <div class="card">
                 <h2 id="economy">2. Экономические последствия</h2>
-                
+                <!-- (Весь контент второго раздела без изменений) -->
                 <h3>Низкая фертильность в целом (независимо от причин)</h3>
                 <p>Краткосрочно: повышает ВВП на душу (меньше расходов на детей, больше работающих женщин). Долгосрочно: сокращение рабочей силы, рост расходов на пенсии/здравоохранение, замедление роста. Старение снижает инновации и производительность в некоторых моделях. <a href="https://www.nber.org/digest/jul09/cost-low-fertility-europe" class="source" target="_blank">[NBER]</a></p>
                 
@@ -283,12 +317,31 @@
     </div>
     
     <script>
-        // Simple active nav
+        const toggleBtn = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        // Закрывать меню после клика по ссылке на мобильных
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                }
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
             });
+        });
+        
+        // Закрытие по клику вне меню (мобильные)
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
         });
     </script>
 </body>
