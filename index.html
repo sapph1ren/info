@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sapph1ren — Главная</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg: #1E1E1E;
+            --surface: #252526;
+            --text: #D4D4D4;
+            --accent: #007ACC;
+            --border: #3C3C3C;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background-color: #1F1F1F;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #FFFFFF;
+            white-space: nowrap;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.2s;
+        }
+        
+        .nav a:hover {
+            color: #FFFFFF;
+        }
+        
+        .nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        h1 {
+            font-size: 36px;
+            color: #FFFFFF;
+            margin-bottom: 16px;
+        }
+        
+        .hero {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 48px;
+            border-radius: 6px;
+            margin-bottom: 48px;
+        }
+        
+        .section {
+            margin-bottom: 80px;
+            scroll-margin-top: 110px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            color: #CCCCCC;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 12px;
+        }
+        
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            margin-bottom: 28px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        
+        .card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+        }
+        
+        .footer {
+            background: #1F1F1F;
+            padding: 32px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">sapph1ren</div>
+        <div class="nav">
+            <a href="#" class="active" id="nav-home">Главная</a>
+            <a href="#about" id="nav-about">Обо мне</a>
+            <a href="#articles" id="nav-articles">Статьи</a>
+            <a href="#videos" id="nav-videos">Видео</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="hero">
+            <h1>Добро пожаловать</h1>
+            <p style="font-size: 18px; color: #B0B0B0; max-width: 700px;">
+                Независимый анализ • программирование • походы
+                
+            </p>
+        </div>
+        
+        <div class="section" id="about">
+            <h2 class="section-title">Обо мне</h2>
+            <div class="card">
+                
+                <p>sapph1ren</p>
+                <p style="margin-top: 16px;"><strong>Основные темы:</strong> Программирование, политика</p>
+            </div>
+        </div>
+        
+        <div class="section" id="articles">
+            <h2 class="section-title">Статьи</h2>
+            <div class="grid">
+                <div class="card" onclick="window.location.href='st_1.html'">
+                    <h3>Влияние ЛГБТ* и исламизации на экономику и демографию</h3>
+                    <p style="color:#888; font-size:14px;">3 июля 2026</p>
+                    <p style="margin-top:12px;">* - деятельность «международного общественного движения ЛГБТ» признана экстремистской и запрещена на территории Российской Федерации</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="videos">
+            <h2 class="section-title">Видео</h2>
+            <div class="grid">
+                <div class="card" onclick="window.location.href='video1.html'">
+                    <h3>У меня еще не вышло видео</h3>
+                    <p style="color:#888; font-size:14px;">01.01.1900</p>
+                    <p style="margin-top:8px;">Возможно, скоро выйдет</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        © sapph1ren • 2026
+    </div>
+    
+    <script>
+    const navLinks = document.querySelectorAll('.nav a');
+    const sections = document.querySelectorAll('.section');
+
+    function updateActiveNav() {
+        let current = 'home';
+        let minDistance = Infinity;
+
+        const scrollPosition = window.scrollY + 150;   // можно подбирать (130-180)
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionBottom = sectionTop + section.offsetHeight;
+
+            if (scrollPosition >= sectionTop - 100 && scrollPosition <= sectionBottom + 50) {
+                const distance = Math.abs(scrollPosition - sectionTop);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    current = section.getAttribute('id');
+                }
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+
+            if (current === 'home' && link.getAttribute('href') === '#') {
+                link.classList.add('active');
+            } else if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    // Надёжная инициализация
+    function init() {
+        // Первый вызов сразу
+        updateActiveNav();
+        
+        // Дополнительные вызовы на всякий случай
+        setTimeout(updateActiveNav, 100);
+        setTimeout(updateActiveNav, 300);
+        setTimeout(updateActiveNav, 600);
+    }
+
+    window.addEventListener('scroll', () => {
+        requestAnimationFrame(updateActiveNav);
+    });
+
+    window.addEventListener('load', init);
+    window.addEventListener('resize', updateActiveNav);
+</script>
+</body>
+</html>
