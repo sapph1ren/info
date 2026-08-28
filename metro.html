@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Московское метро</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #1a1d24;
+    --text: #e8eaed;
+    --muted: #9aa0a6;
+    --border: #2d323c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  h1 { font-size: 18px; font-weight: 600; white-space: nowrap; }
+  input, select, button {
+    background: #252830;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  input { min-width: 200px; }
+  button { cursor: pointer; }
+  button:hover { background: #323640; }
+  .btn-check { color: #81c995; }
+  .btn-cross { color: #f28b82; }
+  #map { flex: 1; }
+  .panel {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    display: none;
+  }
+  .panel h2 { font-size: 18px; margin-bottom: 6px; }
+  .line-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 12px;
+  }
+  .info-row { margin: 7px 0; font-size: 14px; }
+  .info-row span { color: var(--muted); }
+  .actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    z-index: 1000;
+    font-size: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .station-marker {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2.5px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .station-marker.checked {
+    background: #81c995 !important;
+    border-color: #81c995;
+    box-shadow: 0 0 0 2px #81c995;
+  }
+  .station-marker.checked::after {
+    content: "✓";
+    color: #0d1f12;
+    font-size: 13px;
+  }
+  .station-marker.crossed {
+    background: #f28b82 !important;
+    border-color: #f28b82;
+    box-shadow: 0 0 0 2px #f28b82;
+  }
+  .station-marker.crossed::after {
+    content: "✕";
+    color: #1a0505;
+    font-size: 14px;
+  }
+  #status {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Московский метро</h1>
+  <input type="text" id="search" placeholder="Поиск станции...">
+  <select id="lineFilter">
+    <option value="all">Все линии</option>
+  </select>
+  <button onclick="clearMarks()">Сбросить метки</button>
+  <span id="status">Загрузка станций...</span>
+</header>
+
+<div id="map"></div>
+
+<div class="panel" id="infoPanel">
+  <h2 id="stName">—</h2>
+  <div class="line-badge" id="stLine">—</div>
+  <div class="info-row"><span>Глубина:</span> <b id="stDepth">—</b></div>
+  <div class="info-row"><span>Пикет:</span> <b id="stPicket">—</b></div>
+  <div class="info-row"><span>Открыта:</span> <b id="stDate">—</b></div>
+  <div class="actions">
+    <button class="btn-check" onclick="markStation('checked')">✓ Галочка</button>
+    <button class="btn-cross" onclick="markStation('crossed')">✕ Крест</button>
+    <button onclick="markStation(null)">Сброс</button>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<script>
+const LINE_COLORS = {
+  "1": "#EF161E",
+  "2": "#2DBE2C",
+  "3": "#0078BE",
+  "4": "#00BFFF",
+  "5": "#8D5B2D",
+  "6": "#ED9121",
+  "7": "#800080",
+  "8": "#FFD702",
+  "8A": "#FFD702",
+  "9": "#999999",
+  "10": "#99CC00",
+  "11": "#82C0C0",
+  "12": "#A1B3D4",
+  "15": "#DE64A1",
+  "16": "#03795F"
+};
+
+const LINE_NAMES = {
+  "1": "Сокольническая",
+  "2": "Замоскворецкая",
+  "3": "Арбатско-Покровская",
+  "4": "Филёвская",
+  "5": "Кольцевая",
+  "6": "Калужско-Рижская",
+  "7": "Таганско-Краснопресненская",
+  "8": "Калининская",
+  "8A": "Солнцевская",
+  "9": "Серпуховско-Тимирязевская",
+  "10": "Люблинско-Дмитровская",
+  "11": "Большая кольцевая",
+  "12": "Бутовская",
+  "15": "Некрасовская",
+  "16": "Троицкая"
+};
+
+const LINE_MAP = {
+  "Сокольническая линия": "1",
+  "Замоскворецкая линия": "2",
+  "Арбатско-Покровская линия": "3",
+  "Филёвская линия": "4",
+  "Кольцевая линия": "5",
+  "Калужско-Рижская линия": "6",
+  "Таганско-Краснопресненская линия": "7",
+  "Калининская линия": "8",
+  "Солнцевская линия": "8A",
+  "Серпуховско-Тимирязевская линия": "9",
+  "Люблинско-Дмитровская линия": "10",
+  "Большая кольцевая линия": "11",
+  "Бутовская линия": "12",
+  "Некрасовская линия": "15",
+  "Троицкая линия": "16"
+};
+
+// ===== Карта =====
+const map = L.map('map', {
+  center: [55.75, 37.62],
+  zoom: 11
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OSM & CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+let stations = [];
+let markers = {};
+let marks = JSON.parse(localStorage.getItem('metroMarks') || '{}');
+let currentStation = null;
+
+// ===== Загрузка полного JSON =====
+async function loadStations() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/pensnarik/subway-json/master/moscow.json');
+    const raw = await res.json();
+
+    stations = raw.map((s, i) => {
+      let depth = s.depth;
+      if (typeof depth === 'string') {
+        depth = depth.replace('−', '-').replace(',', '.').trim();
+        depth = depth === '' ? null : parseFloat(depth);
+      }
+
+      const lineCode = LINE_MAP[s.line] || s.line;
+
+      return {
+        id: `${lineCode}-${i}`,
+        name: s.name,
+        line: lineCode,
+        lat: s.coords.lat,
+        lon: s.coords.lon,
+        depth: depth,
+        picket: '',
+        open_date: s.open_date || ''
+      };
+    });
+
+    document.getElementById('status').textContent = `Станций: ${stations.length}`;
+    createMarkers();
+    fillLineFilter();
+    createLegend();
+  } catch (e) {
+    document.getElementById('status').textContent = 'Ошибка загрузки данных';
+    console.error(e);
+  }
+}
+
+function createMarkers() {
+  stations.forEach(st => {
+    const color = LINE_COLORS[st.line] || '#888';
+    const mark = marks[st.id];
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="station-marker ${mark || ''}" style="background:${color}"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    const marker = L.marker([st.lat, st.lon], { icon }).addTo(map);
+    marker.stationData = st;
+    markers[st.id] = marker;
+
+    marker.on('click', () => showInfo(st));
+  });
+}
+
+function showInfo(st) {
+  currentStation = st;
+  document.getElementById('stName').textContent = st.name;
+
+  const lineEl = document.getElementById('stLine');
+  lineEl.textContent = `${st.line} • ${LINE_NAMES[st.line] || st.line}`;
+  lineEl.style.background = LINE_COLORS[st.line] || '#888';
+
+  const depthText = st.depth === null ? 'нет данных'
+    : st.depth > 0 ? `+${st.depth} м` : `${Math.abs(st.depth)} м`;
+  document.getElementById('stDepth').textContent = depthText;
+  document.getElementById('stPicket').textContent = st.picket || '—';
+  document.getElementById('stDate').textContent = st.open_date || '—';
+
+  document.getElementById('infoPanel').style.display = 'block';
+}
+
+function markStation(type) {
+  if (!currentStation) return;
+
+  if (type) {
+    marks[currentStation.id] = type;
+  } else {
+    delete marks[currentStation.id];
+  }
+  localStorage.setItem('metroMarks', JSON.stringify(marks));
+
+  const m = markers[currentStation.id];
+  const color = LINE_COLORS[currentStation.line] || '#888';
+  m.setIcon(L.divIcon({
+    className: '',
+    html: `<div class="station-marker ${type || ''}" style="background:${color}"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9]
+  }));
+}
+
+function clearMarks() {
+  if (confirm('Сбросить все галочки и кресты?')) {
+    marks = {};
+    localStorage.removeItem('metroMarks');
+    location.reload();
+  }
+}
+
+function fillLineFilter() {
+  const select = document.getElementById('lineFilter');
+  Object.keys(LINE_NAMES).forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = `${code} — ${LINE_NAMES[code]}`;
+    select.appendChild(opt);
+  });
+}
+
+function createLegend() {
+  const legend = document.getElementById('legend');
+  Object.entries(LINE_NAMES).forEach(([code, name]) => {
+    const div = document.createElement('div');
+    div.innerHTML = `<div class="dot" style="background:${LINE_COLORS[code]}"></div> ${code} ${name}`;
+    legend.appendChild(div);
+  });
+}
+
+// Фильтр + поиск
+document.getElementById('lineFilter').addEventListener('change', filterStations);
+document.getElementById('search').addEventListener('input', filterStations);
+
+function filterStations() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const line = document.getElementById('lineFilter').value;
+
+  stations.forEach(st => {
+    const matchLine = line === 'all' || st.line === line;
+    const matchName = st.name.toLowerCase().includes(q);
+    const m = markers[st.id];
+    if (matchLine && matchName) {
+      m.addTo(map);
+    } else {
+      map.removeLayer(m);
+    }
+  });
+}
+
+map.on('click', () => {
+  document.getElementById('infoPanel').style.display = 'none';
+});
+
+// Запускаем
+loadStations();
+</script>
+</body>
+</html>
