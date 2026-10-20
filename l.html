@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Кто этот чел?</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f13;
+      color: #f0f0f5;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 16px 20px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f0f13;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .history-btn {
+      background: #1c1c24;
+      border: none;
+      color: #aaa;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .history-btn:active {
+      background: #2a2a35;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    #question-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    #category {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    #question {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.35;
+      max-width: 340px;
+    }
+
+    #progress {
+      margin-top: 28px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .progress-bar {
+      width: 180px;
+      height: 4px;
+      background: #1c1c24;
+      border-radius: 2px;
+      margin: 10px auto 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #5b5bff;
+      border-radius: 2px;
+      transition: width 0.25s ease;
+    }
+
+    #verdict-area {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      padding: 20px;
+    }
+
+    .verdict-title {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .verdict-text {
+      font-size: 34px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .verdict-desc {
+      font-size: 16px;
+      color: #aaa;
+      max-width: 300px;
+      line-height: 1.5;
+      margin-bottom: 36px;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .action-btns button {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #5b5bff;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #1c1c24;
+      color: #ccc;
+    }
+
+    footer {
+      padding: 16px 20px 32px;
+      display: flex;
+      gap: 16px;
+      background: #0f0f13;
+    }
+
+    .btn {
+      flex: 1;
+      height: 72px;
+      border: none;
+      border-radius: 20px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-no {
+      background: #2a1a1a;
+      color: #ff6b6b;
+    }
+
+    .btn-yes {
+      background: #1a2a1a;
+      color: #6bff8a;
+    }
+
+    /* История */
+    #history-screen, #detail-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0f0f13;
+      z-index: 100;
+      flex-direction: column;
+    }
+
+    #detail-screen { z-index: 110; }
+
+    .history-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1c1c24;
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .history-item {
+      background: #1c1c24;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .history-item:active {
+      background: #252530;
+    }
+
+    .history-verdict {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .history-date {
+      font-size: 13px;
+      color: #777;
+    }
+
+    .detail-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .qa-item {
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1c1c24;
+    }
+
+    .qa-q {
+      font-size: 15px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .qa-a {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .empty-history {
+      text-align: center;
+      color: #555;
+      margin-top: 80px;
+      font-size: 16px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #5b5bff;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Кто этот чел?</div>
+  <button class="history-btn" onclick="showHistory()">История</button>
+</header>
+
+<main>
+  <div id="question-area">
+    <div id="category"></div>
+    <div id="question">Загрузка...</div>
+    <div id="progress">
+      <span id="progress-text"></span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="verdict-area">
+    <div class="verdict-title">Вердикт</div>
+    <div class="verdict-text" id="verdict-text"></div>
+    <div class="verdict-desc" id="verdict-desc"></div>
+    <div class="action-btns">
+      <button class="btn-secondary" onclick="restart()">Ещё раз</button>
+      <button class="btn-primary" onclick="saveAndRestart()">Сохранить</button>
+    </div>
+  </div>
+</main>
+
+<footer id="buttons">
+  <button class="btn btn-no" onclick="answer(false)">Нет</button>
+  <button class="btn btn-yes" onclick="answer(true)">Да</button>
+</footer>
+
+<!-- История -->
+<div id="history-screen">
+  <div class="history-header">
+    <button class="back-btn" onclick="hideHistory()">← Назад</button>
+    <div style="font-weight:600">История</div>
+    <button class="back-btn" onclick="clearHistory()" style="color:#ff6b6b">Очистить</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<!-- Детали -->
+<div id="detail-screen">
+  <div class="history-header">
+    <button class="back-btn" onclick="hideDetail()">← Назад</button>
+    <div style="font-weight:600" id="detail-title">Детали</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<script>
+  // ====================== ВОПРОСЫ (фиксированная серия) ======================
+  const questions = [
+    // Волосы (2)
+    {
+      category: "Волосы",
+      text: "Яркие, цветные, очень длинные или странная/необычная стрижка?"
+    },
+    {
+      category: "Волосы",
+      text: "Короткие, аккуратные, классическая мужская/женская стрижка?"
+    },
+
+    // Одежда (3)
+    {
+      category: "Одежда",
+      text: "Много чёрного, рванина, цепи, шипы, готика или эмо-стиль?"
+    },
+    {
+      category: "Одежда",
+      text: "Спортивки, джоггеры, худи, оверсайз или явно спортивный лук?"
+    },
+    {
+      category: "Одежда",
+      text: "Рубашка, пиджак, чистые классические джинсы/брюки или деловой стиль?"
+    },
+
+    // Обувь (1)
+    {
+      category: "Обувь",
+      text: "Спортивные кроссовки / беговые / массивные «для зала»?"
+    },
+
+    // Лицо и детали (1)
+    {
+      category: "Лицо и детали",
+      text: "Пирсинг, тату на шее/лице, яркий макияж или сильно выделяющиеся аксессуары?"
+    },
+
+    // Поведение / вайб (2)
+    {
+      category: "Поведение",
+      text: "Пацанская походка, жесты, «дворовый» вайб или агрессивная подача?"
+    },
+    {
+      category: "Поведение",
+      text: "Выглядит спокойно, аккуратно, «нормально» и без выпендрёжа?"
+    }
+  ];
+
+  // ====================== ВЕРДИКТЫ ======================
+  const verdicts = {
+    nefor: {
+      title: "Нефор",
+      desc: "Альтернатива во всём: волосы, чёрный цвет, детали. Классический неформал."
+    },
+    punk: {
+      title: "Панк / Альтернативщик",
+      desc: "Бунтарский вайб есть, но не полный нефор-пакет."
+    },
+    modnik: {
+      title: "Модник",
+      desc: "Следит за собой и за трендами. Выглядит «дорого» и осознанно."
+    },
+    hipster: {
+      title: "Хипстер",
+      desc: "Необычный, но не тёмный. Есть вкус и характер, но без готики."
+    },
+    classic: {
+      title: "Классический норм челик",
+      desc: "Аккуратная стрижка + нормальная одежда. Можно в офис и в гости."
+    },
+    norm: {
+      title: "Просто норм",
+      desc: "Обычный человек. Ничего кричащего, просто живёт свою жизнь."
+    },
+    sport: {
+      title: "Спортсмен",
+      desc: "Весь в спортивном. Либо реально качается, либо просто так удобнее."
+    },
+    joggers: {
+      title: "Джоггер-стайл",
+      desc: "Удобно и по-домашнему, но уже на улице. Классика «выйти в магазин»."
+    },
+    gopnik: {
+      title: "Гопник / Пацан",
+      desc: "Спортивки + особая подача. Атмосфера двора и «по-пацански»."
+    },
+    ded: {
+      title: "Дед",
+      desc: "Практично, немного устаревше, «мне и так нормально». Дедовский вайб."
+    },
+    strange: {
+      title: "Странный тип",
+      desc: "Что-то не сходится. Либо очень своеобразный, либо просто странный."
+    }
+  };
+
+  // ====================== СОСТОЯНИЕ ======================
+  let currentIndex = 0;
+  let answers = []; // true/false по порядку вопросов
+
+  function showQuestion() {
+    if (currentIndex >= questions.length) {
+      calculateVerdict();
+      return;
+    }
+
+    const q = questions[currentIndex];
+    document.getElementById("category").textContent = q.category;
+    document.getElementById("question").textContent = q.text;
+    document.getElementById("progress-text").textContent = `${currentIndex + 1} / ${questions.length}`;
+    document.getElementById("progress-fill").style.width = `${((currentIndex) / questions.length) * 100}%`;
+
+    document.getElementById("question-area").style.display = "flex";
+    document.getElementById("verdict-area").style.display = "none";
+    document.getElementById("buttons").style.display = "flex";
+  }
+
+  function answer(yes) {
+    answers.push(yes);
+    currentIndex++;
+    showQuestion();
+  }
+
+  // ====================== ПОДСЧЁТ ВЕРДИКТА ======================
+  function calculateVerdict() {
+    // Индексы ответов:
+    // 0 - яркие/необычные волосы
+    // 1 - классическая стрижка
+    // 2 - чёрный/рванина/цепи
+    // 3 - спортивки/джоггеры
+    // 4 - рубашка/пиджак/классика
+    // 5 - спортивные кроссы
+    // 6 - пирсинг/тату/макияж
+    // 7 - пацанский вайб
+    // 8 - спокойный/аккуратный
+
+    const a = answers; // для удобства
+
+    // Скоринг
+    let scores = {
+      nefor: 0,
+      punk: 0,
+      modnik: 0,
+      hipster: 0,
+      classic: 0,
+      norm: 0,
+      sport: 0,
+      joggers: 0,
+      gopnik: 0,
+      ded: 0,
+      strange: 0
+    };
+
+    // Волосы
+    if (a[0]) { scores.nefor += 3; scores.punk += 2; scores.hipster += 2; scores.strange += 1; }
+    if (a[1]) { scores.classic += 3; scores.norm += 2; scores.modnik += 1; }
+    if (!a[0] && !a[1]) { scores.strange += 1; scores.ded += 1; }
+
+    // Одежда
+    if (a[2]) { scores.nefor += 4; scores.punk += 3; }
+    if (a[3]) { scores.sport += 3; scores.joggers += 2; scores.gopnik += 2; }
+    if (a[4]) { scores.classic += 4; scores.modnik += 2; scores.norm += 1; }
+
+    // Обувь
+    if (a[5]) { scores.sport += 3; scores.joggers += 2; scores.gopnik += 1; }
+    if (!a[5] && a[4]) { scores.classic += 1; }
+
+    // Лицо
+    if (a[6]) { scores.nefor += 3; scores.punk += 2; scores.hipster += 1; scores.strange += 1; }
+
+    // Поведение
+    if (a[7]) { scores.gopnik += 4; scores.punk += 1; }
+    if (a[8]) { scores.classic += 2; scores.norm += 3; scores.modnik += 1; }
+
+    // Дополнительные правила (чтобы не было совсем рандома)
+    if (a[2] && a[6] && a[0]) scores.nefor += 3;
+    if (a[3] && a[5] && a[7]) scores.gopnik += 4;
+    if (a[3] && a[5] && !a[7]) scores.sport += 3;
+    if (a[1] && a[4] && a[8]) scores.classic += 3;
+    if (!a[0] && !a[2] && !a[3] && !a[4] && !a[6] && !a[7]) scores.norm += 2;
+    if (a[0] && !a[2] && !a[6]) scores.hipster += 2;
+
+    // Если почти ничего не отмечено — дед или странный
+    const totalYes = a.filter(x => x).length;
+    if (totalYes <= 1) {
+      scores.ded += 3;
+      scores.norm += 1;
+    }
+    if (totalYes >= 6) scores.strange += 2;
+
+    // Находим максимальный скор
+    let maxScore = -1;
+    let winner = "norm";
+
+    for (const [key, score] of Object.entries(scores)) {
+      if (score > maxScore) {
+        maxScore = score;
+        winner = key;
+      }
+    }
+
+    // Если всё совсем слабо — просто норм
+    if (maxScore < 2) winner = "norm";
+
+    showVerdict(winner);
+  }
+
+  function showVerdict(key) {
+    const v = verdicts[key];
+    document.getElementById("verdict-text").textContent = v.title;
+    document.getElementById("verdict-desc").textContent = v.desc;
+
+    document.getElementById("question-area").style.display = "none";
+    document.getElementById("verdict-area").style.display = "flex";
+    document.getElementById("buttons").style.display = "none";
+
+    // Сохраняем для кнопки
+    const log = questions.map((q, i) => ({
+      question: q.text,
+      answer: answers[i] ? "Да" : "Нет"
+    }));
+
+    window._lastVerdict = {
+      key,
+      title: v.title,
+      desc: v.desc,
+      log,
+      date: new Date().toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    };
+  }
+
+  function saveAndRestart() {
+    if (window._lastVerdict) {
+      const list = JSON.parse(localStorage.getItem("chel_history") || "[]");
+      list.unshift(window._lastVerdict);
+      if (list.length > 50) list.length = 50;
+      localStorage.setItem("chel_history", JSON.stringify(list));
+    }
+    restart();
+  }
+
+  function restart() {
+    currentIndex = 0;
+    answers = [];
+    window._lastVerdict = null;
+    showQuestion();
+  }
+
+  // ====================== ИСТОРИЯ ======================
+  function showHistory() {
+    const list = JSON.parse(localStorage.getItem("chel_history") || "[]");
+    const container = document.getElementById("history-list");
+    container.innerHTML = "";
+
+    if (list.length === 0) {
+      container.innerHTML = `<div class="empty-history">Пока пусто.<br>Пройди хотя бы одного чела.</div>`;
+    } else {
+      list.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.innerHTML = `
+          <div class="history-verdict">${item.title}</div>
+          <div class="history-date">${item.date}</div>
+        `;
+        div.onclick = () => showDetail(item);
+        container.appendChild(div);
+      });
+    }
+    document.getElementById("history-screen").style.display = "flex";
+  }
+
+  function hideHistory() {
+    document.getElementById("history-screen").style.display = "none";
+  }
+
+  function showDetail(item) {
+    document.getElementById("detail-title").textContent = item.title;
+    const content = document.getElementById("detail-content");
+    content.innerHTML = `
+      <div style="margin-bottom:24px;color:#888;font-size:14px">${item.date}</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">${item.title}</div>
+      <div style="color:#aaa;margin-bottom:28px">${item.desc}</div>
+      <div style="font-size:15px;color:#666;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px">Вопросы и ответы</div>
+    `;
+
+    item.log.forEach(qa => {
+      const div = document.createElement("div");
+      div.className = "qa-item";
+      div.innerHTML = `
+        <div class="qa-q">${qa.question}</div>
+        <div class="qa-a">${qa.answer}</div>
+      `;
+      content.appendChild(div);
+    });
+
+    document.getElementById("detail-screen").style.display = "flex";
+  }
+
+  function hideDetail() {
+    document.getElementById("detail-screen").style.display = "none";
+  }
+
+  function clearHistory() {
+    if (confirm("Точно очистить всю историю?")) {
+      localStorage.removeItem("chel_history");
+      showHistory();
+    }
+  }
+
+  // Старт
+  showQuestion();
+</script>
+</body>
+</html>
