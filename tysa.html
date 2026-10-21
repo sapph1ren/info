@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#071b2b">
+<title>КОРДОН vs УХИЛЯНТЫ</title>
+<style>
+:root{color-scheme:dark;--ink:#e9f7ff;--muted:#9fb9c8;--mint:#85f4c8;--gold:#ffd27a;--panel:rgba(8,28,44,.82)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071b2b;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+body{display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% -20%,#174c62 0%,#071b2b 65%)}
+.topbar{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:12px;padding:0 clamp(12px,3vw,28px);border-bottom:1px solid rgba(172,224,242,.13);background:rgba(4,18,30,.5);z-index:2}
+.mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(145deg,#8ff3ca,#3eafab);color:#083047;box-shadow:0 5px 18px #5fe4bf24;font-size:19px}
+.brand{min-width:0}.brand strong{display:block;font-size:14px;letter-spacing:.09em;text-transform:uppercase;line-height:1.1}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:3px;letter-spacing:.03em}
+.spacer{flex:1}.status{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.035);border-radius:999px;padding:7px 11px;color:#bfd5e0;font-size:11px;white-space:nowrap}.status b{color:var(--mint);font-weight:700}
+.stage{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden;background:#2489bd}canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
+.toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);padding:8px 13px;border:1px solid #d8f7ff35;border-radius:999px;background:rgba(6,29,46,.64);backdrop-filter:blur(10px);color:#e9fbff;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s}.toast.on{opacity:1}
+.touchbar{display:none;flex:0 0 76px;padding:9px 14px calc(9px + env(safe-area-inset-bottom));gap:10px;align-items:stretch;background:linear-gradient(180deg,#0b2639,#061824);border-top:1px solid #a6d9eb21}
+.touchkey{border:1px solid #b5dfec33;border-radius:16px;background:#ffffff08;color:#eaf8ff;font:600 15px inherit;display:grid;place-items:center;flex:1;min-width:0;box-shadow:inset 0 1px 0 #ffffff08;touch-action:none}.touchkey small{font-size:9px;color:#94b4c5;display:block;margin-top:2px;font-weight:500}.touchkey.boost{flex:1.55;background:linear-gradient(135deg,#7cf0c1,#39b8b2);color:#063044;border:0;font-weight:850;box-shadow:0 4px 18px #42dfb733}.touchkey.boost small{color:#075062}
+.footer{height:30px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;gap:16px;color:#789aaa;font-size:10px;letter-spacing:.015em;background:#061622}.footer kbd{font:inherit;color:#c5e1eb;border:1px solid #b8dbe433;background:#ffffff08;border-radius:4px;padding:2px 5px}
+@media (pointer:coarse),(max-width:760px){.touchbar{display:flex}.footer{display:none}.topbar{height:52px;flex-basis:52px}.status{font-size:10px;padding:6px 8px}.brand strong{font-size:12px}.brand span{font-size:10px}.mark{width:30px;height:30px}.toast{top:8px;font-size:10px;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}}
+@media (max-width:390px){.topbar{gap:8px;padding-left:10px;padding-right:10px}.status{padding:5px 7px}.brand span{display:none}.touchbar{padding-left:9px;padding-right:9px;gap:7px}.touchkey{border-radius:13px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="mark">✦</div>
+  <div class="brand"><strong>КОРДОН</strong><span>не пропусти ухилянтов!</span></div>
+  <div class="spacer"></div>
+  <div class="status">РАУНД <b id="roundLabel">01</b></div>
+  <div class="status">РЕКОРД <b id="bestLabel">000</b></div>
+</header>
+<main class="stage" id="stage">
+ <canvas id="game" aria-label="Игровое поле Тисского патруля"></canvas>
+ <div class="toast" id="toast">ВОДЯНАЯ ВОЛНА!</div>
+</main>
+<div class="touchbar" aria-label="Сенсорное управление">
+  <button class="touchkey" id="leftBtn" aria-label="Двигаться влево">◀<small>ВЛЕВО</small></button>
+  <button class="touchkey" id="upBtn" aria-label="Двигаться вверх">▲<small>ВПЕРЁД</small></button>
+  <button class="touchkey" id="downBtn" aria-label="Двигаться вниз">▼<small>НАЗАД</small></button>
+  <button class="touchkey boost" id="waveBtn" aria-label="Водяная волна">ВОЛНА!<small>ОТБРОСИТЬ ПОТОК</small></button>
+  <button class="touchkey" id="rightBtn" aria-label="Двигаться вправо">▶<small>ВПРАВО</small></button>
+</div>
+<footer class="footer"><span><kbd>WASD</kbd> / <kbd>↑←↓→</kbd> движение</span><span><kbd>ПРОБЕЛ</kbd> водяная волна</span><span><kbd>P</kbd> пауза</span><span><kbd>R</kbd> заново</span></footer>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const stage=document.getElementById('stage');
+const roundLabel=document.getElementById('roundLabel'),bestLabel=document.getElementById('bestLabel'),toast=document.getElementById('toast');
+const TAU=Math.PI*2,rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let W=480,H=700,DPR=1,last=0,started=false,paused=false,over=false,toastTimer=0,best=0;
+try{best=Number(localStorage.getItem('tiszaPatrolBest')||0)}catch(e){}bestLabel.textContent=String(best).padStart(3,'0');
+let player,swimmers,splashes,particles,score,escaped,intercepted,timeSinceSpawn,elapsed,round,keys={},pointerTarget=null,waveCooldown=0,shake=0;
+const COLORS=['#ffca83','#f8a88d','#e6c1a3','#c2d3db','#e8b978'];
+function resize(){const r=stage.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,2);W=Math.max(300,r.width);H=Math.max(350,r.height);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);if(player){player.x=clamp(player.x,28,W-28);player.y=clamp(player.y,H*.28,H*.82)}}
+function reset(){player={x:W*.5,y:H*.7,vx:0,vy:0,angle:0,wave:0,trail:0};swimmers=[];splashes=[];particles=[];score=0;escaped=0;intercepted=0;timeSinceSpawn=.45;elapsed=0;round=1;waveCooldown=0;shake=0;paused=false;over=false;started=true;pointerTarget=null;setToast('ПАТРУЛЬ ВЫШЕЛ НА ВОДУ',1.5)}
+function setToast(t,secs=1){toast.textContent=t;toast.classList.add('on');toastTimer=secs}
+function startScreen(){started=false;paused=false;over=false;draw()}
+function spawn(){const x=rand(28,W-28);swimmers.push({x,y:H*.18+rand(-6,18),vx:rand(-10,10),vy:rand(31,48)+Math.min(score*.24,65),r:rand(6.8,9.5),color:COLORS[Math.floor(rand(0,COLORS.length))],phase:rand(0,TAU),life:1,back:false,backTime:0,glow:rand(0,1)})}
+function waterWave(){if(!started){reset();return}if(over){reset();return}if(paused)return;if(waveCooldown>0)return;player.wave=1.2;waveCooldown=4.5;shake=7;setToast('СУПЕРВОЛНА! ПЕРЕЗАРЯДКА 4.5 С',1.1);
+ const cx=player.x-39,cy=player.y;let caught=0;
+ for(const s of swimmers){if(s.back)continue;const d=Math.hypot(s.x-cx,s.y-cy);if(d<145){s.back=true;s.backTime=1.0;s.vy=-Math.max(150,s.vy*2.4);s.vx+=(s.x-cx)/(d||1)*rand(70,150);caught++;s.life=1;makeSplash(s.x,s.y,'#d7fff4',13);for(let k=0;k<6;k++)particles.push({x:s.x,y:s.y,vx:rand(-60,60),vy:rand(-75,30),life:rand(.3,.7),max:.7,r:rand(1,3),color:'#e4fff9'})}}
+ if(caught){score+=caught*10+Math.max(0,caught-1)*4;intercepted+=caught;round=1+Math.floor(score/90);setToast(caught>1?`КОМБО ×${caught}  +${caught*10+(caught-1)*4}`:`ЕСТЬ КОНТАКТ  +10`,1.0);if(score>best){best=score;bestLabel.textContent=String(best).padStart(3,'0');try{localStorage.setItem('tiszaPatrolBest',String(best))}catch(e){}}}else setToast('Мимо! Подведи лодку ближе',.9)
+}
+function makeSplash(x,y,color='#d8f8ff',n=9){splashes.push({x,y,r:2,max:rand(16,30),life:.6,maxLife:.6,color});for(let i=0;i<n;i++){const a=rand(0,TAU),v=rand(20,95);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.25,.65),max:.65,r:rand(1,3),color})}}
+function tick(dt){if(!started||paused||over)return;elapsed+=dt;waveCooldown=Math.max(0,waveCooldown-dt);player.wave=Math.max(0,player.wave-dt);shake=Math.max(0,shake-dt*10);toastTimer=Math.max(0,toastTimer-dt);if(!toastTimer)toast.classList.remove('on');
+ let dx=(keys.ArrowRight||keys.d||keys.D?1:0)-(keys.ArrowLeft||keys.a||keys.A?1:0),dy=(keys.ArrowDown||keys.s||keys.S?1:0)-(keys.ArrowUp||keys.w||keys.W?1:0);
+ if(pointerTarget){dx+=clamp((pointerTarget.x-player.x)/65,-1,1);dy+=clamp((pointerTarget.y-player.y)/65,-1,1)}let len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;const speed=Math.min(330,250+score*.12);player.vx+=(dx*speed-player.vx)*Math.min(1,dt*7);player.vy+=(dy*speed-player.vy)*Math.min(1,dt*7);player.x=clamp(player.x+player.vx*dt,30,W-30);player.y=clamp(player.y+player.vy*dt,H*.28,H*.82);if(Math.abs(player.vx)+Math.abs(player.vy)>5)player.angle=Math.atan2(player.vy,player.vx)*.08;player.trail+=dt;
+ const spawnInterval=Math.max(.27,.9-score*.0023);timeSinceSpawn+=dt;if(timeSinceSpawn>=spawnInterval){timeSinceSpawn=0;spawn();if(score>40&&Math.random()<Math.min(.62,score/280))spawn()}
+ for(let i=swimmers.length-1;i>=0;i--){const s=swimmers[i];s.phase+=dt*5;s.x+=s.vx*dt+Math.sin(s.phase*.45)*7*dt;s.y+=s.vy*dt;s.x=clamp(s.x,15,W-15);if(!s.back&&Math.hypot(s.x-(player.x-39),s.y-player.y)<24){makeSplash(s.x,s.y,'#d7fff4',18);for(let k=0;k<9;k++)particles.push({x:s.x,y:s.y,vx:rand(-100,100),vy:rand(-110,35),life:rand(.35,.8),max:.8,r:rand(1.5,3.5),color:'#e4fff9'});swimmers.splice(i,1);score+=12;intercepted++;round=1+Math.floor(score/90);shake=4;setToast('КОНТАКТ! +12',.65);if(score>best){best=score;bestLabel.textContent=String(best).padStart(3,'0');try{localStorage.setItem('tiszaPatrolBest',String(best))}catch(e){}}continue}if(s.back){s.backTime-=dt;s.vy=Math.min(-20,s.vy+dt*100);s.life=clamp(s.backTime/.7,0,1);if(s.backTime<=0||s.y<H*.16){makeSplash(s.x,s.y,'#d8fff8',7);swimmers.splice(i,1);continue}}else if(s.y>H*.885){makeSplash(s.x,s.y,'#ffe0af',10);swimmers.splice(i,1);escaped++;shake=5;setToast('ПРОРЫВ! ВНИМАНИЕ НА ПОТОК',.9);if(escaped>=5){over=true;setToast('РАУНД ОКОНЧЕН',2)}continue}}
+ for(let i=splashes.length-1;i>=0;i--){const p=splashes[i];p.life-=dt;p.r+=(p.max-p.r)*dt*7;if(p.life<=0)splashes.splice(i,1)}
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.05,dt);p.vy+=80*dt;if(p.life<=0)particles.splice(i,1)}
+ roundLabel.textContent=String(round).padStart(2,'0');
+}
+function rr(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
+function line(x1,y1,x2,y2,color,width=1){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}
+function drawBackground(t){const shoreTop=H*.17,shoreBottom=H*.89;
+ // Water base
+ const g=ctx.createLinearGradient(0,shoreTop,0,shoreBottom);g.addColorStop(0,'#5db6d6');g.addColorStop(.45,'#2388b9');g.addColorStop(1,'#17648f');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // broad current lanes
+ for(let i=0;i<9;i++){const x=(i*137+(t*14)%137)% (W+180)-80;ctx.beginPath();ctx.ellipse(x,H*.5+Math.sin(i*2.1)*H*.2,randStatic(i,38,90),5,0,0,TAU);ctx.fillStyle='#d1f8ff0c';ctx.fill()}
+ // rippling current marks, deterministic
+ for(let i=0;i<52;i++){let x=(i*79+Math.sin(t*.35+i)*16)%W,y=shoreTop+((i*53+t*(11+i%4)*2)%(shoreBottom-shoreTop));ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+8,y-2,x+randStatic(i+5,14,26),y);ctx.strokeStyle=i%3===0?'#d6f7ff32':'#063d6921';ctx.lineWidth=i%5===0?2:1;ctx.stroke()}
+ // near and far river edge
+ ctx.fillStyle='#c2d9a0';ctx.fillRect(0,shoreTop-5,W,10);ctx.fillStyle='#f0e0b2';ctx.fillRect(0,shoreTop+2,W,3);ctx.fillStyle='#b4d39b';ctx.fillRect(0,shoreBottom-3,W,9);ctx.fillStyle='#e5d2a5';ctx.fillRect(0,shoreBottom-3,W,3);
+ // forest bank
+ const fg=ctx.createLinearGradient(0,0,0,shoreTop);fg.addColorStop(0,'#43854d');fg.addColorStop(1,'#8bc56a');ctx.fillStyle=fg;ctx.fillRect(0,0,W,shoreTop-3);
+ for(let i=0;i<Math.ceil(W/42)+2;i++){const x=(i*47+9)%W,y=randStatic(i+10,7,shoreTop-10),r=randStatic(i+30,9,18);ctx.fillStyle=i%2?'#377d43':'#2e6e3a';ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.fillStyle='#6fae5b';ctx.beginPath();ctx.arc(x-r*.22,y-r*.3,r*.68,0,TAU);ctx.fill();ctx.fillStyle='#a1d47a55';ctx.beginPath();ctx.arc(x-r*.35,y-r*.42,r*.25,0,TAU);ctx.fill()}
+ // sparse fence/markers across lower bank
+ const fenceY=H*.905;ctx.fillStyle='#385f48';ctx.fillRect(0,fenceY,W,5);ctx.fillStyle='#b4c2a0';ctx.fillRect(0,fenceY+5,W,3);for(let x=7;x<W;x+=15){ctx.fillStyle='#d5dbc6';ctx.fillRect(x,fenceY+1,3,12);ctx.fillStyle='#6a9472';ctx.fillRect(x+3,fenceY+1,2,11)}
+ // bank grass
+ for(let i=0;i<W/12;i++){const x=i*12+4;line(x,shoreTop-5,x+randStatic(i+64,-2,3),shoreTop-1,'#2f704388',1);line(x,fenceY-2,x+randStatic(i+75,-2,3),fenceY+1,'#2d6a7c66',1)}
+ // discreet corner pennant, fictional colors
+ rr(15,shoreTop*.25,47,26,5,'#061f2c72','#f0ffff3a');ctx.fillStyle='#f5fbf7';ctx.fillRect(20,shoreTop*.25+5,10,16);ctx.fillStyle='#43c3ad';ctx.fillRect(30,shoreTop*.25+5,10,16);ctx.fillStyle='#efb45e';ctx.fillRect(40,shoreTop*.25+5,10,16);
+}
+function randStatic(n,min,max){const v=Math.sin(n*127.1+311.7)*43758.5453;return min+(v-Math.floor(v))*(max-min)}
+function drawSwimmer(s){ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=s.back?Math.min(1,s.life+0.15):1;
+ // personal ripple
+ ctx.beginPath();ctx.ellipse(0,3, s.r*1.9,s.r*.8,0,0,TAU);ctx.strokeStyle='#d5f8ff55';ctx.lineWidth=1.2;ctx.stroke();
+ // backpack/sleeves, head, torso: cute tiny top-down swimmer
+ ctx.fillStyle='#2a4a57';ctx.beginPath();ctx.ellipse(-s.r*.4,1,s.r*.6,s.r*.52,-.5,0,TAU);ctx.fill();
+ ctx.strokeStyle=s.color;ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-s.r*.5,1);ctx.lineTo(-s.r*1.25,-2+Math.sin(s.phase)*1.5);ctx.moveTo(s.r*.1,1);ctx.lineTo(s.r*.85,-2-Math.sin(s.phase)*1.5);ctx.stroke();
+ ctx.fillStyle=s.color;ctx.beginPath();ctx.ellipse(-s.r*.12,0,s.r*.85,s.r*.56,.15,0,TAU);ctx.fill();ctx.fillStyle='#f5d1b0';ctx.beginPath();ctx.arc(s.r*.55,-s.r*.25,s.r*.52,0,TAU);ctx.fill();ctx.fillStyle='#324c59';ctx.beginPath();ctx.arc(s.r*.52,-s.r*.48,s.r*.5,Math.PI,TAU);ctx.fill();
+ if(!s.back){ctx.fillStyle='#f7f9f2';ctx.beginPath();ctx.arc(s.r*.69,-s.r*.27,1.05,0,TAU);ctx.fill()}
+ ctx.restore()}
+function drawBoat(t){const p=player;const x=p.x,y=p.y;
+ // soft wake
+ ctx.save();ctx.translate(x,y);ctx.rotate(p.angle);ctx.fillStyle='#d5f8ff18';ctx.beginPath();ctx.ellipse(-20,4,49,22,0,0,TAU);ctx.fill();ctx.strokeStyle='#e3fbff44';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(-27,4,34+Math.sin(t*5)*4,15+Math.sin(t*4)*2,0,0,TAU);ctx.stroke();
+ // stern + hull
+ ctx.fillStyle='#092f45';ctx.beginPath();ctx.moveTo(-39,-13);ctx.quadraticCurveTo(-48,-5,-43,11);ctx.quadraticCurveTo(-36,19,18,15);ctx.quadraticCurveTo(40,12,47,0);ctx.quadraticCurveTo(38,-14,18,-15);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#e8ede1';ctx.beginPath();ctx.moveTo(-35,-10);ctx.quadraticCurveTo(-42,-3,-37,8);ctx.quadraticCurveTo(-25,13,17,11);ctx.quadraticCurveTo(34,9,40,0);ctx.quadraticCurveTo(31,-10,15,-11);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#f1b65c';ctx.beginPath();ctx.moveTo(-21,-8);ctx.lineTo(19,-7);ctx.lineTo(32,0);ctx.lineTo(18,8);ctx.lineTo(-21,7);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#0d3a50';ctx.beginPath();ctx.roundRect(-15,-8,24,16,4);ctx.fill();ctx.fillStyle='#89bfc8';ctx.beginPath();ctx.roundRect(-11,-6,16,5,2);ctx.fill();ctx.fillStyle='#eaf9f6';ctx.beginPath();ctx.arc(2,2,3.3,0,TAU);ctx.fill();ctx.fillStyle='#377b85';ctx.beginPath();ctx.arc(3,2,1.5,0,TAU);ctx.fill();
+ // flashing buoy / blue light
+ ctx.fillStyle='#78f0cd';ctx.beginPath();ctx.arc(22,-3,2.8+Math.sin(t*7)*.6,0,TAU);ctx.fill();ctx.fillStyle='#7cf4ce25';ctx.beginPath();ctx.arc(22,-3,7+Math.sin(t*7),0,TAU);ctx.fill();
+ // propeller and wave pulse at stern
+ ctx.translate(-39,0);ctx.fillStyle='#2b5669';ctx.beginPath();ctx.arc(0,0,5.5,0,TAU);ctx.fill();ctx.strokeStyle='#ffda8b';ctx.lineWidth=2.4;ctx.lineCap='round';const spin=t*15;for(let i=0;i<3;i++){const a=spin+i*TAU/3;ctx.beginPath();ctx.moveTo(Math.cos(a)*2,Math.sin(a)*2);ctx.lineTo(Math.cos(a)*9,Math.sin(a)*7);ctx.stroke()}
+ if(p.wave>0){const progress=1-p.wave/1.2;ctx.strokeStyle=`rgba(219,255,246,${.85*(1-progress)})`;ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,18+progress*140,0,TAU);ctx.stroke();ctx.strokeStyle=`rgba(108,241,219,${.65*(1-progress)})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,28+progress*150,0,TAU);ctx.stroke()}
+ ctx.restore();
+}
+function text(str,x,y,size,color,align='left',weight=700){ctx.font=`${weight} ${size}px system-ui,-apple-system,Segoe UI,sans-serif`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(str,x,y)}
+function drawHud(){// labels
+ ctx.save();rr(12,12,Math.min(190,W*.46),58,13,'#06263bc9','#ddf8ff24');text('ПЕРЕХВАЧЕНО',24,28,9,'#a5c6d5','left',750);text(String(intercepted).padStart(3,'0'),24,51,21,'#eaf9ff','left',850);line(83,23,83,58,'#cceafc28',1);text('СЧЁТ',96,28,9,'#a5c6d5','left',750);text(String(score).padStart(3,'0'),96,51,21,'#8df3ca','left',850);
+ const boxW=91;rr(W-boxW-12,12,boxW,58,13,'#06263bc9','#ddf8ff24');text('ПРОРЫВЫ',W-12-boxW/2,28,9,'#a5c6d5','center',750);for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(W-boxW-12+20+i*13,51,4.3,0,TAU);ctx.fillStyle=i<escaped?'#ff947a':'#d7f6ff26';ctx.fill();ctx.strokeStyle=i<escaped?'#ffd2b3':'#d7f6ff48';ctx.lineWidth=1;ctx.stroke()}
+ // progressing difficulty rail
+ const rw=Math.min(W-36,260),rx=(W-rw)/2,ry=H*.205;rr(rx,ry,rw,5,3,'#062d4559');rr(rx,ry,rw*clamp((elapsed%18)/18,0,1),5,3,'#94f0ca');text(`ПОТОК УСИЛИВАЕТСЯ  ·  ВОЛНА ${round}`,W/2,ry+17,8,'#e6fbffba','center',750);
+ // cooldown indicator
+ {const bx=W/2,by=H-22;rr(bx-49,by-4,98,4,3,'#05273d62');rr(bx-49,by-4,98*(1-waveCooldown/4.5),4,3,'#93efc9');text(waveCooldown>0?`СУПЕРВОЛНА · ${waveCooldown.toFixed(1)}с`:'СУПЕРВОЛНА ГОТОВА',W/2,by-12,8,waveCooldown>0?'#b7d8e5':'#93efc9','center',750)}
+ ctx.restore()}
+function drawOverlay(){ctx.save();ctx.fillStyle='#0517259e';ctx.fillRect(0,0,W,H);const panelW=Math.min(420,W-30),panelH=over?300:310,x=(W-panelW)/2,y=(H-panelH)/2;rr(x,y,panelW,panelH,24,'#09293beb','#c8f3ff36');
+ // logo mark
+ const cx=W/2;ctx.fillStyle='#84f1ca';ctx.beginPath();ctx.arc(cx,y+42,18,0,TAU);ctx.fill();text('✦',cx,y+43,20,'#0b3648','center',900);
+ if(over){text('ПОТОК ПРОРВАЛСЯ',cx,y+83,20,'#f0f9ff','center',900);text('Патрульный раунд окончен',cx,y+111,12,'#a9c8d5','center',500);line(x+28,y+134,x+panelW-28,y+134,'#d2f3ff24');text('СЧЁТ',cx-panelW*.22,y+163,10,'#95b6c5','center',700);text(String(score),cx-panelW*.22,y+190,26,'#8df3ca','center',900);text('ПЕРЕХВАЧЕНО',cx+panelW*.2,y+163,10,'#95b6c5','center',700);text(String(intercepted),cx+panelW*.2,y+190,26,'#f3f9fc','center',900);rr(x+28,y+222,panelW-56,43,13,'#80eec5');text('ИГРАТЬ ЕЩЁ  ↻',cx,y+244,12,'#083147','center',900);text('Нажми Enter или кнопку «Волна»',cx,y+282,10,'#9db9c7','center',500)}else if(paused){text('ПАУЗА',cx,y+91,25,'#f0f9ff','center',900);text('Вода подождёт.',cx,y+127,13,'#a9c8d5','center',500);rr(x+28,y+177,panelW-56,43,13,'#80eec5');text('ПРОДОЛЖИТЬ',cx,y+199,12,'#083147','center',900);text('P — продолжить',cx,y+245,10,'#9db9c7','center',500)}else{text('Тисский патруль',cx,y+91,25,'#f0f9ff','center',900);text('Речная аркада с растущим потоком',cx,y+122,12,'#a9c8d5','center',500);line(x+28,y+145,x+panelW-28,y+145,'#d2f3ff24');text('Управляй лодкой и запускай водяную волну,',cx,y+168,11,'#d6e9f1','center',550);text('чтобы разворачивать пловцов обратно.',cx,y+187,11,'#d6e9f1','center',550);text('5 прорывов — раунд окончен.',cx,y+210,11,'#ffcd85','center',750);rr(x+28,y+232,panelW-56,43,13,'#80eec5');text('НАЧАТЬ ПАТРУЛЬ  →',cx,y+254,12,'#083147','center',900);text('WASD / стрелки · Пробел · P — пауза',cx,y+288,10,'#9db9c7','center',500)}ctx.restore()}
+function draw(){ctx.save();if(shake>0)ctx.translate(rand(-shake,shake),rand(-shake,shake));drawBackground(elapsed||0);if(started){for(const s of swimmers)drawSwimmer(s);drawBoat(elapsed);for(const p of splashes){ctx.globalAlpha=clamp(p.life/p.maxLife,0,1);ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.stroke()}ctx.globalAlpha=1;for(const p of particles){ctx.globalAlpha=clamp(p.life/(p.max||.65),0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill()}ctx.globalAlpha=1;drawHud()}else{ // decorative demo scene behind title
+ const demoY=H*.68;player={x:W*.53,y:demoY,wave:0,angle:0};drawBoat(0);player=null;for(let i=0;i<5;i++)drawSwimmer({x:W*(.16+i*.16),y:H*(.39+(i%2)*.18),r:7,color:COLORS[i],phase:i,back:false,life:1})}
+ ctx.restore();if(!started||paused||over)drawOverlay()}
+function frame(now){const dt=Math.min(.032,(now-last)/1000||0);last=now;tick(dt);draw();requestAnimationFrame(frame)}
+function toWorld(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();const p=toWorld(e);if(!started||over){reset();return}if(paused){paused=false;return}if(e.pointerType==='mouse'){pointerTarget=p;setTimeout(()=>{pointerTarget=null},300)}else{pointerTarget=p;setTimeout(()=>{pointerTarget=null},450)}});
+canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&e.buttons){pointerTarget=toWorld(e)}});
+canvas.addEventListener('pointerup',()=>{if(pointerTarget)setTimeout(()=>{pointerTarget=null},120)});
+window.addEventListener('keydown',e=>{const k=e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k))e.preventDefault();if(k===' '){if(!started||over)reset();else waterWave()}else if(k==='Enter'&&(!started||over))reset();else if(k.toLowerCase()==='p'&&started&&!over){paused=!paused;setToast(paused?'ПАУЗА':'ПОЕХАЛИ',.8)}else if(k.toLowerCase()==='r')reset();keys[k]=true});window.addEventListener('keyup',e=>keys[e.key]=false);window.addEventListener('blur',()=>{keys={};pointerTarget=null});
+function holdButton(id,key){const b=document.getElementById(id);const on=e=>{e.preventDefault();keys[key]=true;if(!started||over)reset()};const off=e=>{e.preventDefault();keys[key]=false};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)}
+holdButton('leftBtn','ArrowLeft');holdButton('rightBtn','ArrowRight');holdButton('upBtn','ArrowUp');holdButton('downBtn','ArrowDown');document.getElementById('waveBtn').addEventListener('pointerdown',e=>{e.preventDefault();waterWave()});
+canvas.addEventListener('click',e=>{if(!started||over)reset()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!over)paused=true});
+window.addEventListener('resize',resize);resize();startScreen();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
